@@ -5,35 +5,33 @@ import warnings
 
 import coloredlogs
 import yaml
-#from google.cloud.logging_v2._helpers import retrieve_metadata_server
-
 
 warnings.filterwarnings("ignore", message=".*CUDA is not available.*")
 
 
-def get_logger(name, path="config/logger_config.yaml", default_level=logging.INFO) -> logging.Logger:
+def get_logger(
+    name, path="config/logger_config.yaml", default_level=logging.INFO
+) -> logging.Logger:
     """Function that generates a logger from a configuration file
     or defaults to a preset configuration if a config file is not found."""
 
-    _GCE_INSTANCE_ID = "instance/id"
-    """Attribute in metadata server for compute region and instance."""
+    if os.path.exists(path):
+        with open(path, "rt") as f:
+            config = yaml.safe_load(f.read())
 
-    gce_instance_name = retrieve_metadata_server(_GCE_INSTANCE_ID)
+            file_handlers = config.get("handlers", {})
+            for handler_name, handler in file_handlers.items():
+                if "filename" in handler:
+                    log_dir = os.path.dirname(handler["filename"])
+                    if log_dir and not os.path.exists(log_dir):
+                        os.makedirs(log_dir, exist_ok=True)
 
-    if gce_instance_name is None:
-        if os.path.exists(path):
-            with open(path, "rt") as f:
-                config = yaml.safe_load(f.read())
-                logging.config.dictConfig(config)
-                coloredlogs.install()
-                logger = logging.getLogger(name)
-        else:
-            logging.basicConfig(level=default_level)
-            coloredlogs.install(level=default_level)
+            logging.config.dictConfig(config)
+            coloredlogs.install()
             logger = logging.getLogger(name)
-
     else:
         logging.basicConfig(level=default_level)
+        coloredlogs.install(level=default_level)
         logger = logging.getLogger(name)
 
     return logger

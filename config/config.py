@@ -6,19 +6,16 @@ from dataclasses import dataclass
 class PipelineConfiguration:
     """Dataclass that contains all required configurables for the RAG."""
 
-    project_id: str
-    run_local: bool = False
+    # project_id: str
+    # run_local: bool = False
 
 
 development: PipelineConfiguration = PipelineConfiguration(
-    run_local=True,
-    project_id="",
-   
+    # run_local=True,
+    # project_id="",
 )
 
-production: PipelineConfiguration = PipelineConfiguration(
-   
-)
+production: PipelineConfiguration = PipelineConfiguration()
 
 
 def get_pipeline_config() -> PipelineConfiguration:
@@ -36,16 +33,14 @@ def get_pipeline_config() -> PipelineConfiguration:
         incorrect or no APP_ENV value is found
     """
 
-    app_env: str = os.getenv("APP_ENV", "")
+    app_env: str = os.getenv("APP_ENV", "development")
 
     if app_env == "development":
         return development
     elif app_env == "production":
         return production
     else:
-        raise ValueError(
-            f"Pipeline configuration not found for APP_ENV: {app_env}"
-        )
+        raise ValueError(f"Pipeline configuration not found for APP_ENV: {app_env}")
 
 
 conf = get_pipeline_config()
