@@ -10,7 +10,7 @@ from src.utils.logging_utils import get_logger
 logger: Logger = get_logger(name=__name__)
 
 
-def get_reasoning_score(data, llm_ans):
+def get_average_reasoning_score(data, llm_ans):
     reasoning_list = []
 
     # Iterate through the data and llm_answers
