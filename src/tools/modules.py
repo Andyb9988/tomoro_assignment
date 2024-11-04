@@ -6,14 +6,8 @@ from typing import (
 
 import dspy
 
-from config.config import (
-    PipelineConfiguration,
-    get_pipeline_config,
-)
 from src.tools.signatures import GenerateCotAnswer
 from src.utils.logging_utils import get_logger
-
-APP_CONFIG: PipelineConfiguration = get_pipeline_config()
 
 logger: Logger = get_logger(name=__name__)
 

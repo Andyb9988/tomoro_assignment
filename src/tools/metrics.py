@@ -7,13 +7,16 @@ from typing import (
 
 import dspy
 
+from src.tools.models import OpenAILM
 from src.tools.signatures import AssessReasoning
 from src.utils.logging_utils import get_logger
 
 logger: Logger = get_logger(name=__name__)
 
 
-def get_average_reasoning_score(data, llm_ans) -> Optional[float]:
+def get_average_reasoning_score(
+    data, llm_ans, model: str = "gpt-4-turbo"
+) -> Optional[float]:
     """
     Calculates the average reasoning accuracy score based on provided data and LLM answers.
 
@@ -21,17 +24,20 @@ def get_average_reasoning_score(data, llm_ans) -> Optional[float]:
     accuracy using the `AssessReasoning` predictor, and computes the average accuracy score.
 
     Args:
-        data (List[DataItem]): A list of data items, each containing `context` and `dialogue_break` attributes.
-        llm_ans (List[AnswerObj]): A list of answer objects, each containing a `reasoning` attribute.
+        data (List): A list of data items, each containing `context` and `dialogue_break` attributes.
+        llm_ans (List): A list of answer objects, each containing a `reasoning` attribute.
 
     Returns:
-        Optional[float]: The average reasoning accuracy score if at least one valid score is computed;
+        Optional[float]: The average reasoning accuracy score between 1-10 if at least one valid score is computed;
                          otherwise, `None`.
 
     Raises:
         AttributeError: If expected attributes (`context`, `dialogue_break`, `reasoning`) are missing.
     """
     reasoning_list: List[float] = []
+    lm = OpenAILM(model=model)
+    dspy.configure(lm=lm)
+    logger.info(f"Using model: {lm}, {model}")
 
     # Iterate through the data and LLM answers simultaneously
     for data_item, ans_obj in zip(data, llm_ans):

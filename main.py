@@ -1,14 +1,15 @@
 import json
 from logging import Logger
+from typing import (
+    Any,
+    List,
+)
 
 import dspy
 import pandas as pd
 from dspy.datasets import DataLoader
 
-from config.config import (
-    PipelineConfiguration,
-    get_pipeline_config,
-)
+from config.config import DataItem
 from src.tools.metrics import (
     get_answer_accuracy,
     get_average_reasoning_score,
@@ -22,8 +23,6 @@ from src.utils.data_processsing import (
 from src.utils.eval_df import get_llm_answer_outcome_df
 from src.utils.logging_utils import get_logger
 
-APP_CONFIG: PipelineConfiguration = get_pipeline_config()
-
 logger: Logger = get_logger(name=__name__)
 
 
@@ -34,7 +33,7 @@ dl = DataLoader()
 parser = DataParser()
 model_list = ["gpt-3.5-turbo", "gpt-4-turbo", "gpt-4o-mini"]
 
-split_data = shuffle_and_split(data=data, length=20, seed=5)
+split_data = shuffle_and_split(data=data, length=2000, seed=15)
 parsed_data = parser.process_data(split_data)
 
 eval_df = dl.from_pandas(
@@ -52,7 +51,16 @@ eval_df = dl.from_pandas(
 )
 
 
-def get_llm_answers(data):
+def get_llm_answers(data: List[DataItem]) -> List[Any]:
+    """
+    Retrieves answers from the LLM for each item in the provided data list.
+
+    Args:
+        data (List[DataItem]): A list of DataItem instances, each containing context, id, and question.
+
+    Returns:
+        List[Any]: A list of answers obtained from the LLM corresponding to each data item.
+    """
     llm_answers = []
     for i in data:
         obj = OutputFinalAnswer(context=i.context, id=i.id)
@@ -68,7 +76,7 @@ def main():
 
     # Iterate over each model in the model_list
     for model in model_list:
-        print(f"Running experiment for model: {model}")
+        logger.info(f"Running experiment for model: {model}")
         # Configure the language model
         lm = OpenAILM(model=model)
         dspy.configure(lm=lm)

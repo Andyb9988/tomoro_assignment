@@ -4,13 +4,7 @@ from logging import Logger
 import dspy
 import openai
 
-from config.config import (
-    PipelineConfiguration,
-    get_pipeline_config,
-)
 from src.utils.logging_utils import get_logger
-
-APP_CONFIG: PipelineConfiguration = get_pipeline_config()
 
 logger: Logger = get_logger(name=__name__)
 
