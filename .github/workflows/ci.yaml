@@ -1,0 +1,61 @@
+# name: ci-python-unittest-linting
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+
+    steps:
+      # Step 1: Checkout the repository
+      - uses: actions/checkout@v4
+
+      # Step 2: Check for the existence of test_metrics.py
+      - name: Verify test_metrics.py Exists
+        run: |
+          if [ ! -f ./tests/test_metrics.py ]; then
+            echo "Error: test_metrics.py not found in the tests directory."
+            exit 1
+          else
+            echo "test_metrics.py found."
+          fi
+
+      # Step 3: Set up Python
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # Step 3: Install dependencies
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pylint
+
+
+      # Step 4: Install dependencies
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+          pip install pylint
+
+      - name: Set PYTHONPATH
+        run: echo "PYTHONPATH=${{ github.workspace }}/src" >> $GITHUB_ENV
+
+    # Step 5: Run unit test
+      - name: Test with unittest
+        run: |
+          python -m unittest discover -s ./tests -p 'test_*.py'
+
+      # Step 6: Analyze the code with pylint
+      - name: Analyze code with pylint
+        run: |
+          pylint --fail-under=6 $(git ls-files '*.py')
