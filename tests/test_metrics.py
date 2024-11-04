@@ -1,12 +1,9 @@
-import logging
-import re
 from typing import List
 from unittest.mock import (
     MagicMock,
     patch,
 )
 
-import dspy
 import pytest
 
 from src.tools.metrics import (
