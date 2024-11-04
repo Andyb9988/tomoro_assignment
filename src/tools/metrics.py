@@ -1,6 +1,9 @@
 import re
 from logging import Logger
-from typing import List
+from typing import (
+    List,
+    Optional,
+)
 
 import dspy
 
@@ -10,34 +13,60 @@ from src.utils.logging_utils import get_logger
 logger: Logger = get_logger(name=__name__)
 
 
-def get_average_reasoning_score(data, llm_ans):
-    reasoning_list = []
+def get_average_reasoning_score(data, llm_ans) -> Optional[float]:
+    """
+    Calculates the average reasoning accuracy score based on provided data and LLM answers.
 
-    # Iterate through the data and llm_answers
+    This function iterates through paired items from `data` and `llm_ans`, evaluates the reasoning
+    accuracy using the `AssessReasoning` predictor, and computes the average accuracy score.
+
+    Args:
+        data (List[DataItem]): A list of data items, each containing `context` and `dialogue_break` attributes.
+        llm_ans (List[AnswerObj]): A list of answer objects, each containing a `reasoning` attribute.
+
+    Returns:
+        Optional[float]: The average reasoning accuracy score if at least one valid score is computed;
+                         otherwise, `None`.
+
+    Raises:
+        AttributeError: If expected attributes (`context`, `dialogue_break`, `reasoning`) are missing.
+    """
+    reasoning_list: List[float] = []
+
+    # Iterate through the data and LLM answers simultaneously
     for data_item, ans_obj in zip(data, llm_ans):
-        # Extract variables from data
-        context = data_item.context
-        dialogue_break = data_item.dialogue_break
+        try:
+            # Extract necessary attributes
+            context = data_item.context
+            dialogue_break = data_item.dialogue_break
+            llm_reasoning = ans_obj.reasoning
+        except AttributeError as e:
+            logger.error(f"Missing expected attribute: {e}")
+            continue
 
-        llm_reasoning = ans_obj.reasoning
+        # Assess reasoning accuracy
+        try:
+            assessment = dspy.Predict(AssessReasoning)(
+                actual_reasoning=dialogue_break,
+                llm_reasoning=llm_reasoning,
+                context=context,
+            )
+            reasoning_accuracy = assessment.assessment_answer
+        except Exception as e:
+            logger.error(f"Error during reasoning assessment: {e}")
+            continue
 
-        reasoning_accuracy = dspy.Predict(AssessReasoning)(
-            actual_reasoning=dialogue_break,
-            llm_reasoning=llm_reasoning,
-            context=context,
-        ).assessment_answer
-
-        # Ensure reasoning_accuracy is numeric
+        # Convert reasoning accuracy to float and add to list
         try:
             reasoning_accuracy = float(reasoning_accuracy)
             reasoning_list.append(reasoning_accuracy)
-            logger.info(f"Reasoning Accuracy {reasoning_accuracy}")
-        except ValueError:
+            logger.info(f"Reasoning Accuracy: {reasoning_accuracy}")
+        except (ValueError, TypeError) as e:
             logger.error(
-                f"Non-numeric reasoning accuracy encountered: {reasoning_accuracy}"
+                f"Non-numeric reasoning accuracy encountered: {reasoning_accuracy} ({e})"
             )
+        # Calculate and return the average reasoning accuracy if available
 
-    # Calculate the average reasoning accuracy if the list is not empty
     if reasoning_list:
         average_reasoning_score = sum(reasoning_list) / len(reasoning_list)
         logger.info(f"Average Reasoning Accuracy: {average_reasoning_score:.2f}")
