@@ -11,8 +11,10 @@ from dspy.datasets import DataLoader
 
 from config.config import DataItem
 from src.tools.metrics import (
-    get_answer_accuracy,
-    get_average_reasoning_score,
+    calculate_accuracy_from_df,
+    calculate_average_reasoning_score,
+    get_answer_accuracy_df,
+    get_reasoning_scores,
 )
 from src.tools.models import OpenAILM
 from src.tools.modules import OutputFinalAnswer
@@ -33,8 +35,8 @@ dl = DataLoader()
 parser = DataParser()
 model_list = ["gpt-3.5-turbo", "gpt-4-turbo", "gpt-4o-mini"]
 
-split_data = shuffle_and_split(data=data, length=2000, seed=15)
-parsed_data = parser.process_data(split_data)
+split_data = shuffle_and_split(data=data, length=50, seed=30)
+parsed_data = parser.process_data(data=split_data, use_parse_table=False)
 
 eval_df = dl.from_pandas(
     parsed_data,
@@ -84,17 +86,21 @@ def main():
         # Generate LLM answers
         llm_ans_list = get_llm_answers(eval_df)
 
-        # Compute metrics
-        accuracy = get_answer_accuracy(data=eval_df, llm_answers=llm_ans_list)
-        reasoning_score = get_average_reasoning_score(
-            data=eval_df, llm_ans=llm_ans_list
-        )
+        # Get accuracy and reasoning score for each question
+        accuracy_df = get_answer_accuracy_df(data=eval_df, llm_answers=llm_ans_list)
+        reasoning_df = get_reasoning_scores(data=eval_df, llm_ans=llm_ans_list)
+
+        # Compute average metrics
+        accuracy = calculate_accuracy_from_df(accuracy_df)
+        reasoning_score = calculate_average_reasoning_score(reasoning_df)
 
         # Get the outcome DataFrame
-        outcome_df = get_llm_answer_outcome_df(eval_df, llm_ans_list)
+        outcome_df = get_llm_answer_outcome_df(
+            eval_df, llm_ans_list, reasoning_df=reasoning_df, accuracy_df=accuracy_df
+        )
 
         # Save the outcome DataFrame to CSV
-        outcome_csv_path = f"data/outcome_{model}.csv"
+        outcome_csv_path = f"data/table_not_parsed_outcome_{model}.csv"
         outcome_df.to_csv(outcome_csv_path, index=False)
         logger.info(f"Saved outcome DataFrame to {outcome_csv_path}")
 
@@ -111,7 +117,7 @@ def main():
     # Create a summary DataFrame of all experiments
     experiment_df = pd.DataFrame(experiment_results)
     # Save the summary DataFrame to CSV
-    experiment_csv_path = "data/experiment_results.csv"
+    experiment_csv_path = "data/no_table_parse_experiment_results.csv"
     experiment_df.to_csv(experiment_csv_path, index=False)
     logger.info(f"Saved experiment summary to {experiment_csv_path}")
 

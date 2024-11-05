@@ -6,7 +6,10 @@ from typing import (
 
 import dspy
 
-from src.tools.signatures import GenerateCotAnswer
+from src.tools.signatures import (
+    AssessReasoning,
+    GenerateCotAnswer,
+)
 from src.utils.logging_utils import get_logger
 
 logger: Logger = get_logger(name=__name__)
@@ -48,4 +51,26 @@ class OutputFinalAnswer(dspy.Module):
         )
 
         prediction = self.generate_answer(question=question, context=self.context)
+        return prediction
+
+
+class LLMJudge(dspy.Module):
+    def __init__(
+        self,
+        context: str,
+        llm_reasoning: str,
+        dialogue_break: str,
+    ) -> None:
+        super().__init__()
+        self.generate_answer = dspy.Predict(AssessReasoning)
+        self.context = context
+        self.llm_reasoning = llm_reasoning
+        self.dialogue_break = dialogue_break
+
+    def get_answer(self) -> Any:
+        prediction = self.generate_answer(
+            actual_reasoning=self.dialogue_break,
+            llm_reasoning=self.llm_reasoning,
+            context=self.context,
+        )
         return prediction

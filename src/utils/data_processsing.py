@@ -82,7 +82,6 @@ class DataParser:
 
         # Remove currency symbols and commas
         value = value.replace("$", "").replace(",", "").strip()
-        # Handle percentages
 
         # Handle negative numbers in parentheses or with minus sign
         match = re.match(r"-?\(?\s*(-?\d+\.?\d*)\s*\)?", value)
@@ -136,12 +135,15 @@ class DataParser:
         logger.info(f"Parsed {len(data)} rows from the table.")
         return data
 
-    def make_pandas_df(self, data: List[Dict[str, Any]]) -> pd.DataFrame:
+    def make_pandas_df(
+        self, data: List[Dict[str, Any]], use_parse_table: bool = True
+    ) -> pd.DataFrame:
         """
-        Converts processed data into a pandas DataFrame.
+        Converts processed data into a pandas DataFrame with optional table parsing.
 
         Args:
             data (List[Dict[str, Any]]): The processed data.
+            use_parse_table (bool): Flag to indicate if the parse_table function should be used.
 
         Returns:
             pd.DataFrame: The resulting pandas DataFrame.
@@ -152,9 +154,15 @@ class DataParser:
             pre_text = " ".join(entry.get("pre_text", []))
             post_text = " ".join(entry.get("post_text", []))
             raw_table = entry.get("table", [])
-            parsed_table = self.parse_table(raw_table)
-            table = parsed_table
 
+            if use_parse_table:
+                logger.info("Parsing table as requested.")
+                parsed_table = self.parse_table(raw_table)
+            else:
+                logger.info("Skipping table parsing.")
+                parsed_table = raw_table
+
+            table = parsed_table
             combined = ""
 
             # Combine pre_text
@@ -165,7 +173,9 @@ class DataParser:
             # Combine table
             if table:
                 logger.info("Adding table to context.")
-                table_json = json.dumps(table, indent=2)
+                table_json = (
+                    json.dumps(table, indent=2) if use_parse_table else str(table)
+                )
                 combined += "### Table\n" + table_json + "\n\n"
 
             # Combine post_text
@@ -234,12 +244,15 @@ class DataParser:
         ]
         return df
 
-    def process_data(self, data: List[Dict[str, Any]]) -> pd.DataFrame:
+    def process_data(
+        self, data: List[Dict[str, Any]], use_parse_table: bool = True
+    ) -> pd.DataFrame:
         """
         Processes the input data and returns a pandas DataFrame.
 
         Args:
             data (List[Dict[str, Any]]): The input data to be processed.
+            use_parse_table (bool): Flag to indicate if the parse_table function should be used.
 
         Returns:
             pd.DataFrame: The processed pandas DataFrame.
@@ -247,5 +260,5 @@ class DataParser:
         if not data:
             logger.error("No data provided to process_data.")
             return pd.DataFrame()
-        df = self.make_pandas_df(data)
+        df = self.make_pandas_df(data, use_parse_table=use_parse_table)
         return df
