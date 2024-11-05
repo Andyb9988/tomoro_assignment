@@ -35,7 +35,7 @@ dl = DataLoader()
 parser = DataParser()
 model_list = ["gpt-3.5-turbo", "gpt-4-turbo", "gpt-4o-mini"]
 
-split_data = shuffle_and_split(data=data, length=59, seed=30)
+split_data = shuffle_and_split(data=data, length=50, seed=30)
 parsed_data = parser.process_data(data=split_data, use_parse_table=False)
 
 eval_df = dl.from_pandas(

@@ -82,7 +82,6 @@ class DataParser:
 
         # Remove currency symbols and commas
         value = value.replace("$", "").replace(",", "").strip()
-        # Handle percentages
 
         # Handle negative numbers in parentheses or with minus sign
         match = re.match(r"-?\(?\s*(-?\d+\.?\d*)\s*\)?", value)
